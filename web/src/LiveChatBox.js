@@ -9,12 +9,12 @@ import * as Conf from "./Conf";
 import "./LiveChatBox.css";
 import {ThemeDefault} from "./Conf";
 import ChatPrompts from "./ChatPrompts";
-import * as THREE from "three";
-import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
-import {Water} from "three/examples/jsm/objects/Water2";
-import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
-import {DRACOLoader} from "three/examples/jsm/loaders/DRACOLoader";
-import {RGBELoader} from "three/examples/jsm/loaders/RGBELoader";
+import {AnimationMixer, AxesHelper, CircleGeometry, Clock, EquirectangularReflectionMapping, Fog, LoopOnce, Mesh, MeshBasicMaterial, PerspectiveCamera, PointLight, RepeatWrapping, SRGBColorSpace, Scene, SkeletonHelper, SphereGeometry, TextureLoader, Vector2, Vector3, WebGLRenderer} from "three";
+import {OrbitControls} from "three/addons/controls/OrbitControls";
+import {Water} from "three/addons/objects/Water2";
+import {GLTFLoader} from "three/addons/loaders/GLTFLoader";
+import {DRACOLoader} from "three/addons/loaders/DRACOLoader";
+import {RGBELoader} from "three/addons/loaders/RGBELoader";
 import ChatBox from "./ChatBox";
 
 class LiveChatBox extends ChatBox {
@@ -24,7 +24,7 @@ class LiveChatBox extends ChatBox {
     this.inputImage = React.createRef();
     this.mixer = null;
     this.actions = {};
-    this.clock = new THREE.Clock();
+    this.clock = new Clock();
     this.lastPropsUpdateTime = Date.now();
     this.shouldAnim = false;
     this.currentAnim = "idle";
@@ -85,14 +85,14 @@ class LiveChatBox extends ChatBox {
   };
 
   componentDidMount() {
-    this.scene = new THREE.Scene();
+    this.scene = new Scene();
     this.scene.castShadow = true;
     this.scene.receiveShadow = true;
-    this.scene.fog = new THREE.Fog("#cce0ff", 5, 800);
+    this.scene.fog = new Fog("#cce0ff", 5, 800);
     // const ambientLight = new THREE.AmbientLight(0x404040); // 低亮度的白光
     // ambientLight.intensity = 20;
     // this.scene.add(ambientLight);
-    const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+    const pointLight = new PointLight(0xffffff, 1, 100);
     pointLight.position.set(-5, 10, 40);
     this.scene.add(pointLight);
 
@@ -102,7 +102,7 @@ class LiveChatBox extends ChatBox {
     let agent, skeleton;
     let idleAction, greetingAction, talkAction_1, talkAction_2, talkAction_3, talkAction_4, thinkAction;
 
-    this.camera = new THREE.PerspectiveCamera(
+    this.camera = new PerspectiveCamera(
       75,
       width / height,
       0.1,
@@ -116,10 +116,10 @@ class LiveChatBox extends ChatBox {
     this.camera.updateProjectionMatrix();
     this.scene.add(this.camera);
 
-    this.renderer = new THREE.WebGLRenderer({
+    this.renderer = new WebGLRenderer({
       antialias: true,
     });
-    this.renderer.outputEncoding = THREE.SRGBColorSpace;
+    this.renderer.outputEncoding = SRGBColorSpace;
     this.renderer.setSize(width, height);
 
     window.addEventListener("resize", () => {
@@ -131,7 +131,7 @@ class LiveChatBox extends ChatBox {
 
     const controls = new OrbitControls(this.camera, this.renderer.domElement);
 
-    const axesHelper = new THREE.AxesHelper(5);
+    const axesHelper = new AxesHelper(5);
     this.scene.add(axesHelper);
 
     this.animate = () => {
@@ -144,33 +144,33 @@ class LiveChatBox extends ChatBox {
 
     this.animate();
 
-    const texture = new THREE.TextureLoader().load("https://cdn.casibase.org/assets/textures/skybox/Sky_horiz_1.jpg");
+    const texture = new TextureLoader().load("https://cdn.casibase.org/assets/textures/skybox/Sky_horiz_1.jpg");
 
-    const skyGeometry = new THREE.SphereGeometry(500, 60, 60);
-    const skyMaterial = new THREE.MeshBasicMaterial({
+    const skyGeometry = new SphereGeometry(500, 60, 60);
+    const skyMaterial = new MeshBasicMaterial({
       map: texture,
     });
     skyGeometry.scale(1, 1, -1);
-    const sky = new THREE.Mesh(skyGeometry, skyMaterial);
+    const sky = new Mesh(skyGeometry, skyMaterial);
     this.scene.add(sky);
 
-    const waterGeometry = new THREE.CircleGeometry(300, 64);
+    const waterGeometry = new CircleGeometry(300, 64);
     const water = new Water(waterGeometry, {
-      normalMap0: new THREE.TextureLoader().load("https://cdn.casibase.org/assets/textures/water/water_normal_0.jpeg", texture => {
-        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      normalMap0: new TextureLoader().load("https://cdn.casibase.org/assets/textures/water/water_normal_0.jpeg", texture => {
+        texture.wrapS = texture.wrapT = RepeatWrapping;
         texture.repeat.set(0.1, 0.1);
       }),
-      normalMap1: new THREE.TextureLoader().load("https://cdn.casibase.org/assets/textures/water/water_normal_1.jpeg", texture => {
-        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      normalMap1: new TextureLoader().load("https://cdn.casibase.org/assets/textures/water/water_normal_1.jpeg", texture => {
+        texture.wrapS = texture.wrapT = RepeatWrapping;
         texture.repeat.set(0.1, 0.1);
       }),
       textureWidth: 1024,
       textureHeight: 1024,
       color: "#eeeeff",
-      sunDirection: new THREE.Vector3(),
+      sunDirection: new Vector3(),
       sunColor: 0xffffff,
       distortionScale: 3.7,
-      flowDirection: new THREE.Vector2(1, 1),
+      flowDirection: new Vector2(1, 1),
       scale: 2,
       fog: this.scene.fog !== undefined,
     });
@@ -202,12 +202,12 @@ class LiveChatBox extends ChatBox {
       });
       agent.position.set(-6, 1.5, 45);
       agent.scale.set(4, 4, 4);
-      skeleton = new THREE.SkeletonHelper(agent);
+      skeleton = new SkeletonHelper(agent);
       skeleton.visible = false;
       this.scene.add(skeleton);
 
       const animations = gltf.animations;
-      this.mixer = new THREE.AnimationMixer(agent);
+      this.mixer = new AnimationMixer(agent);
 
       greetingAction = this.mixer.clipAction(animations[0]);
       idleAction = this.mixer.clipAction(animations[2]);
@@ -231,7 +231,7 @@ class LiveChatBox extends ChatBox {
 
     const hdrLoader = new RGBELoader();
     hdrLoader.loadAsync("https://cdn.casibase.org/assets/textures/skybox/skyHDR.hdr"). then((texture) => {
-      texture.mapping = THREE.EquirectangularReflectionMapping;
+      texture.mapping = EquirectangularReflectionMapping;
       this.scene.background = texture;
       this.scene.environment = texture;
     });
@@ -277,7 +277,7 @@ class LiveChatBox extends ChatBox {
             if (key === selectedAnimation) {
               this.actions[key].reset().fadeIn(0.5).play();
               this.actions[key].clampWhenFinished = true;
-              this.actions[key].loop = THREE.LoopOnce;
+              this.actions[key].loop = LoopOnce;
             } else {
               this.actions[key].fadeOut(0.5);
             }
